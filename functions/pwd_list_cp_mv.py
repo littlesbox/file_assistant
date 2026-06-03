@@ -2,13 +2,14 @@ import os
 import json
 import shutil
 from typing import Optional
-from _ensure_in_workspace import _ensure_in_workspace
+from ._ensure_in_workspace import _ensure_in_workspace
 
 # ---------- 功能函数 ----------
 def get_current_directory() -> str:
     """返回当前工作目录的绝对路径"""
     cwd = os.getcwd()
     return json.dumps({"current_directory": cwd}, ensure_ascii=False)
+
 
 
 def list_current_directory_files(extension: str = None, name_contains: str = None) -> str:
@@ -41,6 +42,7 @@ def list_current_directory_files(extension: str = None, name_contains: str = Non
             "modified_time": stat.st_mtime  # 时间戳，方便LLM处理
         })
     return json.dumps({"files": files, "count": len(files)}, ensure_ascii=False)
+
 
 
 def list_files(path: Optional[str] = None,
@@ -90,6 +92,7 @@ def list_files(path: Optional[str] = None,
         })
 
     return json.dumps({"files": files, "count": len(files)}, ensure_ascii=False)
+
 
 
 def list_files_recursive(path: Optional[str] = None,

@@ -1,6 +1,6 @@
 import os
 import json
-from _ensure_in_workspace import _ensure_in_workspace
+from ._ensure_in_workspace import _ensure_in_workspace
 
 
 def rename_file(path: str, new_name: str) -> str:

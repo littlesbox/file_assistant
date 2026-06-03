@@ -14,6 +14,7 @@ from functions import (
     move_file,
     rename_file,
     create_directory,
+    get_current_time,
 )
 
 # ------------------------ 工具封装 ------------------------
@@ -117,6 +118,11 @@ def create_directory_tool(path: str) -> str:
     返回 JSON 字符串，包含操作结果。
     """
     return create_directory(path)
+
+@tool
+def get_current_time_tool() -> str:
+    """获取当前系统日期和时间，返回 ISO 格式字符串。"""
+    return get_current_time()
 
 # 所有文件操作工具列表，可直接传给 Agent
 all_file_tools = [
