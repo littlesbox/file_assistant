@@ -9,6 +9,7 @@ from functions import (
     get_current_directory,
     list_current_directory_files,
     list_files_recursive,
+    list_files,
     copy_file,
     move_file,
     rename_file,
@@ -53,6 +54,24 @@ def list_files_recursive_tool(
     返回 JSON 字符串，包含文件列表和数量。
     """
     return list_files_recursive(path=path, extension=extension, name_contains=name_contains)
+
+
+@tool
+def list_files_tool(
+    path: Optional[str] = None,
+    extension: Optional[str] = None,
+    name_contains: Optional[str] = None
+) -> str:
+    """
+    列出指定目录下的所有文件（不包含子文件夹）。
+    参数：
+        path: 目录路径，默认为当前工作目录
+        extension: 过滤扩展名，如 ".pdf", ".xlsx"，可选
+        name_contains: 文件名包含的字符串，可选
+    返回 JSON 字符串，包含文件列表和数量。
+    """
+    return list_files(path=path, extension=extension, name_contains=name_contains)
+
 
 @tool
 def copy_file_tool(source: str, destination: str) -> str:
@@ -103,6 +122,7 @@ def create_directory_tool(path: str) -> str:
 all_file_tools = [
     get_current_directory_tool,
     list_current_directory_files_tool,
+    list_files_tool,
     list_files_recursive_tool,
     copy_file_tool,
     move_file_tool,

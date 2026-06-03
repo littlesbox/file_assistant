@@ -1,5 +1,7 @@
 import os
 import json
+from _ensure_in_workspace import _ensure_in_workspace
+
 
 def rename_file(path: str, new_name: str) -> str:
     """
@@ -9,6 +11,12 @@ def rename_file(path: str, new_name: str) -> str:
         new_name: 新文件名（含扩展名），不能包含路径分隔符
     返回 JSON 字符串，包含操作结果。
     """
+
+    # 校验：源文件路径必须在工作目录下
+    error = _ensure_in_workspace(path)
+    if error:
+        return error
+
     # 检查源文件是否存在
     if not os.path.isfile(path):
         return json.dumps({"success": False, "error": f"文件不存在: {path}"}, ensure_ascii=False)
@@ -24,6 +32,11 @@ def rename_file(path: str, new_name: str) -> str:
     # 构造新路径（保持原目录）
     dir_name = os.path.dirname(path)
     new_path = os.path.join(dir_name, new_name)
+
+    # 校验：新路径也在工作目录下（双重保险）
+    error = _ensure_in_workspace(new_path)
+    if error:
+        return error
 
     # 检查新路径是否已存在
     if os.path.exists(new_path):
@@ -44,6 +57,12 @@ def create_directory(path: str) -> str:
         path: 目录绝对路径
     返回 JSON 字符串，包含操作结果。
     """
+
+     # 校验：目标路径必须在工作目录下
+    error = _ensure_in_workspace(path)
+    if error:
+        return error
+
     # 如果路径已存在且是目录，视为成功
     if os.path.isdir(path):
         return json.dumps({"success": True, "path": path, "note": "目录已存在"}, ensure_ascii=False)
