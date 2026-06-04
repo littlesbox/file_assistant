@@ -2,6 +2,15 @@ from llm import llm_factory
 from tools import all_file_tools
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
+from langchain_core.messages import (
+    AIMessage,
+    ToolMessage,
+)
+from rich.console import Console
+from rich.panel import Panel
+from rich.markdown import Markdown
+
+console = Console()
 
 memory = InMemorySaver()
 
@@ -38,24 +47,94 @@ agent = create_agent(
 
 def run_conversation():
     print("输入 exit 结束对话：")
-    while(True):
-        user_input = input("用户：").strip()
+
+    while True:
+        user_input = input("\n用户：").strip()
+
         if user_input.lower() in ("exit", "quit"):
             break
+
         if not user_input:
             continue
-        result  = agent.invoke(
-        {"messages":[{"role":"user", "content":user_input}]},
-        config={
-            "configurable": {
-                "thread_id": "1"
-            }
-        }
+
+        console.print(
+            Panel(
+                user_input,
+                title="👤 User",
+                border_style="blue"
+            )
         )
-        for msg in result["messages"]:
-            print(type(msg).__name__)
-            print(msg.content)
-            print("=" * 50)
+
+        seen = set()
+        for chunk in agent.stream(
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": user_input
+                    }
+                ]
+            },
+            config={
+                "configurable": {
+                    "thread_id": "1"
+                }
+            },
+            stream_mode="values"
+        ):
+
+            msg = chunk["messages"][-1]
+            if msg.id in seen:
+                continue
+
+            seen.add(msg.id)
+            # -------------------------
+            # AI 调用工具
+            # -------------------------
+            if (
+                isinstance(msg, AIMessage)
+                and msg.tool_calls
+            ):
+                for call in msg.tool_calls:
+
+                    console.print(
+                        Panel(
+                            f"[bold]Tool:[/bold] {call['name']}\n\n"
+                            f"[bold]Args:[/bold]\n{call['args']}",
+                            title="🔧 Tool Call",
+                            border_style="yellow"
+                        )
+                    )
+
+            # -------------------------
+            # 工具返回结果
+            # -------------------------
+            elif isinstance(msg, ToolMessage):
+
+                console.print(
+                    Panel(
+                        str(msg.content),
+                        title=f"✅ Tool Result ({msg.name})",
+                        border_style="green"
+                    )
+                )
+
+            # -------------------------
+            # AI 最终回复
+            # -------------------------
+            elif (
+                isinstance(msg, AIMessage)
+                and not msg.tool_calls
+                and msg.content
+            ):
+
+                console.print(
+                    Panel(
+                        Markdown(msg.content),
+                        title="🤖 Assistant",
+                        border_style="cyan"
+                    )
+                )
 
 if __name__ == "__main__":
     run_conversation()
