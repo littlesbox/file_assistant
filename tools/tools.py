@@ -15,6 +15,8 @@ from functions import (
     rename_file,
     create_directory,
     get_current_time,
+    delete_file,
+    delete_directory,
 )
 
 # ------------------------ 工具封装 ------------------------
@@ -120,6 +122,22 @@ def create_directory_tool(path: str) -> str:
     return create_directory(path)
 
 @tool
+def delete_file_tool(path: str) -> str:
+    """
+    删除文件（优先移入回收站，否则永久删除）。
+    参数：path（文件绝对路径，不能是目录）。
+    """
+    return delete_file(path)
+
+@tool
+def delete_directory_tool(path: str) -> str:
+    """
+    递归删除整个文件夹（包含所有子文件夹和文件）。优先移入回收站，否则永久删除。
+    参数：path（文件夹绝对路径，必须是目录）。
+    """
+    return delete_directory(path)
+
+@tool
 def get_current_time_tool() -> str:
     """获取当前系统日期和时间，返回 ISO 格式字符串。"""
     return get_current_time()
@@ -134,6 +152,9 @@ all_file_tools = [
     move_file_tool,
     rename_file_tool,
     create_directory_tool,
+    get_current_time,
+    delete_file_tool,
+    delete_directory_tool,
 ]
 
 # 如果未来有多个模块的工具，可以合并列表：
