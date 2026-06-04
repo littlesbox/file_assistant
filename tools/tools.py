@@ -10,6 +10,7 @@ from functions import (
     list_current_directory_files,
     list_files_recursive,
     list_files,
+    list_directory,
     copy_file,
     move_file,
     rename_file,
@@ -74,6 +75,14 @@ def list_files_tool(
     返回 JSON 字符串，包含文件列表和数量。
     """
     return list_files(path=path, extension=extension, name_contains=name_contains)
+
+
+@tool
+def list_directory_tool(path: Optional[str] = None,
+                        extension: Optional[str] = None,
+                        name_contains: Optional[str] = None) -> str:
+    """列出指定目录下的所有项目（文件和子文件夹，不递归）。参数：path（可选）、extension（可选）、name_contains（可选）"""
+    return list_directory(path, extension, name_contains)
 
 
 @tool
@@ -148,6 +157,7 @@ all_file_tools = [
     list_current_directory_files_tool,
     list_files_tool,
     list_files_recursive_tool,
+    list_directory_tool,
     copy_file_tool,
     move_file_tool,
     rename_file_tool,

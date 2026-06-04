@@ -8,9 +8,10 @@ memory = InMemorySaver()
 SYSTEM_PROMPT = '''**你是一个文件管理助手，你能辅助人类进行文件管理，有如下工具供你使用**。
 ---
 - `get_current_directory_tool` 查看当前的工作目录
-- `list_current_directory_files_tool` 列出当前工作目录下的文件和文件夹（不进行递归）
-- `list_files_tool` 列出指定目录下的文件和文件夹（不进行递归）
-- `list_files_recursive_tool` 列出指定目录下的文件和文件夹（进行递归）
+- `list_current_directory_files_tool` 列出当前工作目录下的文件（不进行递归，不包含子文件夹，支持文件名和扩展名过滤）
+- `list_files_tool` 列出指定目录下的文件（不进行递归，不包含子文件夹，支持文件名和扩展名过滤）
+- `list_directory_tool` 列出指定目录下的所有项目（不进行递归，支持文件名和扩展名过滤）
+- `list_files_recursive_tool` 列出指定目录下的文件和文件夹（进行递归，支持文件名和扩展名过滤）
 - `copy_file_tool` 复制文件
 - `move_file_tool` 移动文件
 - `rename_file_tool` 重命名文件
