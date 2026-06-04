@@ -7,10 +7,8 @@ from typing import Optional
 from langchain_core.tools import tool
 from functions import (
     get_current_directory,
-    list_current_directory_files,
-    list_files_recursive,
-    list_files,
     list_directory,
+    list_directory_recursive,
     copy_file,
     move_file,
     rename_file,
@@ -29,60 +27,84 @@ def get_current_directory_tool() -> str:
     """
     return get_current_directory()
 
-@tool
-def list_current_directory_files_tool(
-    extension: Optional[str] = None,
-    name_contains: Optional[str] = None
-) -> str:
-    """
-    列出当前工作目录下的所有文件（不包含子文件夹），可按扩展名或文件名关键字过滤。
-    参数:
-        extension: 文件扩展名，如 ".pdf", ".xlsx"，可选。
-        name_contains: 文件名包含的字符串，可选。
-    返回 JSON 字符串，包含文件列表和数量。
-    """
-    return list_current_directory_files(extension=extension, name_contains=name_contains)
+# @tool
+# def list_current_directory_files_tool(
+#     extension: Optional[str] = None,
+#     name_contains: Optional[str] = None
+# ) -> str:
+#     """
+#     列出当前工作目录下的所有文件（不包含子文件夹），可按扩展名或文件名关键字过滤。
+#     参数:
+#         extension: 文件扩展名，如 ".pdf", ".xlsx"，可选。
+#         name_contains: 文件名包含的字符串，可选。
+#     返回 JSON 字符串，包含文件列表和数量。
+#     """
+#     return list_current_directory_files(extension=extension, name_contains=name_contains)
 
-@tool
-def list_files_recursive_tool(
-    path: Optional[str] = None,
-    extension: Optional[str] = None,
-    name_contains: Optional[str] = None
-) -> str:
-    """
-    递归列出指定目录下的所有文件（包含所有子目录中的文件）。
-    参数:
-        path: 目录路径，默认为当前工作目录。
-        extension: 过滤扩展名，如 ".pdf", ".xlsx"，可选。
-        name_contains: 文件名包含的字符串，可选。
-    返回 JSON 字符串，包含文件列表和数量。
-    """
-    return list_files_recursive(path=path, extension=extension, name_contains=name_contains)
+# @tool
+# def list_files_recursive_tool(
+#     path: Optional[str] = None,
+#     extension: Optional[str] = None,
+#     name_contains: Optional[str] = None
+# ) -> str:
+#     """
+#     递归列出指定目录下的所有文件（包含所有子目录中的文件）。
+#     参数:
+#         path: 目录路径，默认为当前工作目录。
+#         extension: 过滤扩展名，如 ".pdf", ".xlsx"，可选。
+#         name_contains: 文件名包含的字符串，可选。
+#     返回 JSON 字符串，包含文件列表和数量。
+#     """
+#     return list_files_recursive(path=path, extension=extension, name_contains=name_contains)
 
 
-@tool
-def list_files_tool(
-    path: Optional[str] = None,
-    extension: Optional[str] = None,
-    name_contains: Optional[str] = None
-) -> str:
-    """
-    列出指定目录下的所有文件（不包含子文件夹）。
-    参数：
-        path: 目录路径，默认为当前工作目录
-        extension: 过滤扩展名，如 ".pdf", ".xlsx"，可选
-        name_contains: 文件名包含的字符串，可选
-    返回 JSON 字符串，包含文件列表和数量。
-    """
-    return list_files(path=path, extension=extension, name_contains=name_contains)
+# @tool
+# def list_files_tool(
+#     path: Optional[str] = None,
+#     extension: Optional[str] = None,
+#     name_contains: Optional[str] = None
+# ) -> str:
+#     """
+#     列出指定目录下的所有文件（不包含子文件夹）。
+#     参数：
+#         path: 目录路径，默认为当前工作目录
+#         extension: 过滤扩展名，如 ".pdf", ".xlsx"，可选
+#         name_contains: 文件名包含的字符串，可选
+#     返回 JSON 字符串，包含文件列表和数量。
+#     """
+#     return list_files(path=path, extension=extension, name_contains=name_contains)
 
 
 @tool
 def list_directory_tool(path: Optional[str] = None,
                         extension: Optional[str] = None,
                         name_contains: Optional[str] = None) -> str:
-    """列出指定目录下的所有项目（文件和子文件夹，不递归）。参数：path（可选）、extension（可选）、name_contains（可选）"""
+    """
+    列出指定目录下的所有项目（包括文件和子文件夹），不进行递归。
+    参数：
+        path: 目录路径，默认为当前工作目录
+        extension: 过滤扩展名（仅对文件有效），如 ".pdf"，可选
+        name_contains: 名称中包含的字符串（对文件和文件夹均有效），可选
+    返回 JSON 字符串，包含项目列表和总数。
+    目录项额外包含 'is_empty' 字段（true/false/null 表示未知）。
+    """
     return list_directory(path, extension, name_contains)
+
+
+@tool
+def list_directory_recursive_tool(path: Optional[str] = None,
+                                  extension: Optional[str] = None,
+                                  name_contains: Optional[str] = None) -> str:
+    """
+    递归列出指定目录下的所有项目（包括子文件夹中的文件和文件夹）。
+    参数：
+        path: 目录路径，默认为当前工作目录
+        extension: 过滤扩展名（仅对文件有效），如 ".pdf"，可选
+        name_contains: 名称中包含的字符串（对文件和文件夹均有效），可选
+    返回 JSON 字符串，包含项目列表和总数。
+    目录项额外包含 'is_empty' 字段（true/false/null 表示未知）。
+    """
+    return list_directory_recursive(path, extension, name_contains)
 
 
 @tool
@@ -154,10 +176,11 @@ def get_current_time_tool() -> str:
 # 所有文件操作工具列表，可直接传给 Agent
 all_file_tools = [
     get_current_directory_tool,
-    list_current_directory_files_tool,
-    list_files_tool,
-    list_files_recursive_tool,
+    # list_current_directory_files_tool,
+    # list_files_tool,
+    # list_files_recursive_tool,
     list_directory_tool,
+    list_directory_recursive_tool,
     copy_file_tool,
     move_file_tool,
     rename_file_tool,

@@ -17,8 +17,6 @@ from .rm import (
 )
 
 from .ls import (
-    list_current_directory_files,
-    list_files_recursive,
-    list_files,
     list_directory,
+    list_directory_recursive,
 )
