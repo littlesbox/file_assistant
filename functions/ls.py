@@ -2,6 +2,7 @@ import os
 import json
 import shutil
 from typing import Optional
+import datetime
 from ._ensure_in_workspace import _ensure_in_workspace
 
 
@@ -32,7 +33,7 @@ def list_current_directory_files(extension: str = None, name_contains: str = Non
             "path": full_path,
             "extension": os.path.splitext(f)[1].lower(),
             "size_bytes": stat.st_size,
-            "modified_time": stat.st_mtime  # 时间戳，方便LLM处理
+            "modified_time": datetime.datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")  # 时间戳，方便LLM处理
         })
     return json.dumps({"files": files, "count": len(files)}, ensure_ascii=False)
 
@@ -81,7 +82,7 @@ def list_files(path: Optional[str] = None,
             "path": full_path,
             "extension": os.path.splitext(f)[1].lower(),
             "size_bytes": stat.st_size,
-            "modified_time": stat.st_mtime
+            "modified_time": datetime.datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
         })
 
     return json.dumps({"files": files, "count": len(files)}, ensure_ascii=False)
@@ -142,11 +143,11 @@ def list_directory(path: Optional[str] = None,
             stat = os.stat(full_path)
             item_info["extension"] = os.path.splitext(entry)[1].lower()
             item_info["size_bytes"] = stat.st_size
-            item_info["modified_time"] = stat.st_mtime
+            item_info["modified_time"] = datetime.datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
         else:
             # 目录也可以添加修改时间等信息，按需提供
             stat = os.stat(full_path)
-            item_info["modified_time"] = stat.st_mtime
+            item_info["modified_time"] = datetime.datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
 
         items.append(item_info)
 
@@ -194,7 +195,7 @@ def list_files_recursive(path: Optional[str] = None,
                 "path": full_path,
                 "extension": os.path.splitext(f)[1].lower(),
                 "size_bytes": stat.st_size,
-                "modified_time": stat.st_mtime
+                "modified_time": datetime.datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
             })
 
     return json.dumps({"files": files, "count": len(files)}, ensure_ascii=False)
