@@ -93,8 +93,8 @@ async def process_one_message(user_input: str):
     处理单条用户输入。
     工具调用/结果用原有面板输出；最终AI文字回复用 Live 面板动态刷新。
     """
-    streaming_live = None          # Live 对象
-    accumulated_text = ""          # 累积的完整回复文本
+    streaming_live = None
+    accumulated_text = ""
 
     async for event in agent.astream_events(
         {"messages": [{"role": "user", "content": user_input}]},
@@ -107,50 +107,43 @@ async def process_one_message(user_input: str):
         if kind == "on_chat_model_stream":
             content = event["data"]["chunk"].content
             if content:
-                # 首次收到文字时创建 Live 面板
                 if streaming_live is None:
                     streaming_live = Live(
                         Panel("", title="🤖 Assistant", border_style="cyan"),
                         console=console,
-                        refresh_per_second=10,  # 刷新频率，避免过高
-                        transient=False          # 保留历史，不擦除
+                        refresh_per_second=10,
+                        transient=False
                     )
                     streaming_live.start()
-
                 accumulated_text += content
-                # 用 Markdown 渲染更新面板内容
                 streaming_live.update(
-                    Panel(
-                        Markdown(accumulated_text),
-                        title="🤖 Assistant",
-                        border_style="cyan"
-                    )
+                    Panel(Markdown(accumulated_text), title="🤖 Assistant", border_style="cyan")
                 )
 
         # ---------- 模型生成结束 ----------
         elif kind == "on_chat_model_end":
+            # 显示工具调用（如果有）
+            output = event["data"]["output"]
+            if isinstance(output, AIMessage) and output.tool_calls:
+                print_message(output)
+
+            # 结束流式面板（如果有）
             if streaming_live is not None:
-                # 最后一次更新，然后停止 Live
                 streaming_live.update(
-                    Panel(
-                        Markdown(accumulated_text),
-                        title="🤖 Assistant",
-                        border_style="cyan"
-                    )
+                    Panel(Markdown(accumulated_text), title="🤖 Assistant", border_style="cyan")
                 )
                 streaming_live.stop()
                 streaming_live = None
                 accumulated_text = ""
 
-        # ---------- 工具调用 / 工具结果 ----------
+        # ---------- 工具结果 ----------
         elif kind == "on_tool_end":
             output = event["data"]["output"]
             if isinstance(output, ToolMessage):
                 print_message(output)
-            elif isinstance(output, AIMessage) and output.tool_calls:
-                print_message(output)
+            # 可能还有一些情况 output 是带有 tool_calls 的 AIMessage？但通常已在 on_chat_model_end 中处理，忽略
 
-    # 万一循环结束但 Live 还开着（异常情况），确保关闭
+    # 安全关闭
     if streaming_live is not None:
         streaming_live.stop()
 
