@@ -1,3 +1,7 @@
+import sys
+import nest_asyncio
+import asyncio
+
 from llm import llm_factory
 from tools import all_file_tools
 
@@ -12,11 +16,14 @@ from langchain_core.messages import (
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
+from rich.live import Live
 
 from prompt_toolkit import prompt
 
-console = Console()
+# 解决事件循环嵌套冲突
+nest_asyncio.apply()
 
+console = Console()
 memory = InMemorySaver()
 
 SYSTEM_PROMPT = """
@@ -51,7 +58,6 @@ SYSTEM_PROMPT = """
 """
 
 llm = llm_factory("qwen")
-
 agent = create_agent(
     model=llm,
     system_prompt=SYSTEM_PROMPT,
@@ -61,17 +67,9 @@ agent = create_agent(
 
 
 def print_message(msg):
-    """
-    统一处理消息输出
-    """
-
-    # =========================
-    # Tool Call
-    # =========================
+    """一次性打印工具调用或工具结果"""
     if isinstance(msg, AIMessage) and msg.tool_calls:
-
         for call in msg.tool_calls:
-
             console.print(
                 Panel(
                     f"[bold]Tool:[/bold] {call['name']}\n\n"
@@ -80,12 +78,7 @@ def print_message(msg):
                     border_style="yellow",
                 )
             )
-
-    # =========================
-    # Tool Result
-    # =========================
     elif isinstance(msg, ToolMessage):
-
         console.print(
             Panel(
                 str(msg.content),
@@ -94,34 +87,74 @@ def print_message(msg):
             )
         )
 
-    # =========================
-    # Final AI Response
-    # =========================
-    elif isinstance(msg, AIMessage):
 
-        if not msg.content:
-            return
+async def process_one_message(user_input: str):
+    """
+    处理单条用户输入。
+    工具调用/结果用原有面板输出；最终AI文字回复用 Live 面板动态刷新。
+    """
+    streaming_live = None
+    accumulated_text = ""
 
-        console.print(
-            Panel(
-                Markdown(str(msg.content)),
-                title="🤖 Assistant",
-                border_style="cyan",
-            )
-        )
+    async for event in agent.astream_events(
+        {"messages": [{"role": "user", "content": user_input}]},
+        config={"configurable": {"thread_id": "1"}},
+        version="v2",
+    ):
+        kind = event["event"]
+
+        # ---------- 流式 token ----------
+        if kind == "on_chat_model_stream":
+            content = event["data"]["chunk"].content
+            if content:
+                if streaming_live is None:
+                    streaming_live = Live(
+                        Panel("", title="🤖 Assistant", border_style="cyan"),
+                        console=console,
+                        refresh_per_second=10,
+                        transient=False
+                    )
+                    streaming_live.start()
+                accumulated_text += content
+                streaming_live.update(
+                    Panel(Markdown(accumulated_text), title="🤖 Assistant", border_style="cyan")
+                )
+
+        # ---------- 模型生成结束 ----------
+        elif kind == "on_chat_model_end":
+            # 显示工具调用（如果有）
+            output = event["data"]["output"]
+            if isinstance(output, AIMessage) and output.tool_calls:
+                print_message(output)
+
+            # 结束流式面板（如果有）
+            if streaming_live is not None:
+                streaming_live.update(
+                    Panel(Markdown(accumulated_text), title="🤖 Assistant", border_style="cyan")
+                )
+                streaming_live.stop()
+                streaming_live = None
+                accumulated_text = ""
+
+        # ---------- 工具结果 ----------
+        elif kind == "on_tool_end":
+            output = event["data"]["output"]
+            if isinstance(output, ToolMessage):
+                print_message(output)
+            # 可能还有一些情况 output 是带有 tool_calls 的 AIMessage？但通常已在 on_chat_model_end 中处理，忽略
+
+    # 安全关闭
+    if streaming_live is not None:
+        streaming_live.stop()
 
 
 def run_conversation():
-
     console.print("[bold green]输入 exit 结束对话[/bold green]\n")
 
     while True:
-
         user_input = prompt("用户：").strip()
-
         if user_input.lower() in ("exit", "quit"):
             break
-
         if not user_input:
             continue
 
@@ -134,39 +167,10 @@ def run_conversation():
         )
 
         try:
-
-            for chunk in agent.stream(
-                {
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": user_input,
-                        }
-                    ]
-                },
-                config={
-                    "configurable": {
-                        "thread_id": "1",
-                    }
-                },
-                stream_mode="updates",
-            ):
-
-                for node_name, node_data in chunk.items():
-
-                    messages = node_data.get("messages", [])
-
-                    for msg in messages:
-                        print_message(msg)
-
+            asyncio.run(process_one_message(user_input))
         except Exception as e:
-
             console.print(
-                Panel(
-                    str(e),
-                    title="❌ Error",
-                    border_style="red",
-                )
+                Panel(str(e), title="❌ Error", border_style="red")
             )
 
 
