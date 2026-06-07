@@ -6,7 +6,7 @@ def qwen_llm():
     from langchain_qwq import ChatQwen
     #qwen
     qwen = ChatQwen(
-        model="qwen-max",
+        model="glm-5",
         api_key=os.getenv("DASHSCOPE_API_KEY"),
         base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         temperature=0.7
